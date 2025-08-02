@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectral Archives</title>
+    <style>
+        body { background-color: #000; color: #0f0; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 2rem; }
+        h1, h2 { text-align: center; text-shadow: 0 0 5px #0f0; }
+        a { color: #0ff; }
+        .ghost-entry { border: 1px solid #0f0; padding: 1rem; margin-bottom: 2rem; background: rgba(0, 15, 0, 0.5); }
+        .ghost-entry h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>Spectral Archives</h1>
+    <p style="text-align: center;"><a href="/">[ Return to Live Scanner ]</a></p>
+
+    {% for ghost in ghosts %}
+        <div class="ghost-entry">
+            <h3>{{ ghost['name'] }}</h3>
+            <p><strong>Era:</strong> {{ ghost['era'] }}</p>
+            <p><strong>Backstory:</strong> {{ ghost['backstory'] }}</p>
+            <p><strong>Message:</strong> "<em>{{ ghost['message'] }}</em>"</p>
+            <small>Discovered On: {{ ghost['discovered_at'] }}</small>
+        </div>
+    {% endfor %}
+
+</body>
+</html>
