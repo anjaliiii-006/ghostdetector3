@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haunted Investigation</title>
+
+    <!-- Elegant & Gothic Fonts from Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=MedievalSharp&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* --- Welcome Screen Styles --- */
+        #welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 200;
+            /* Puts it on top of everything */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-out;
+        }
+
+        #welcome-box {
+            max-width: 500px;
+            padding: 2rem;
+            border: 1px solid #666;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- Video Background --- */
+        #bg-video {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -10;
+            filter: brightness(0.4) grayscale(0.5);
+        }
+
+        /* --- General Setup --- */
+        body {
+            color: #EAEAEA;
+            font-family: 'Cinzel', serif;
+            text-align: center;
+            margin: 0;
+            padding: 1rem;
+            overflow-x: hidden;
+            /* Prevents horizontal scrollbar */
+            overflow-y: auto;
+            /* Allows vertical scrollbar ONLY when needed */
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3), 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- Title --- */
+        h1 {
+
+            font-family: 'MedievalSharp', cursive;
+            font-size: clamp(3rem, 10vw, 5rem);
+            color: #b30000;
+            text-shadow: 2px 2px 8px #000;
+            margin-top: 10vh;
+        }
+
+        /* --- Roaming Ghosts --- */
+        .roaming-ghost {
+            position: fixed;
+            width: clamp(100px, 15vw, 150px);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: -5;
+        }
+
+        #ghost1 {
+            top: 20%;
+            animation: roam-left-right 25s linear infinite;
+        }
+
+        #ghost2 {
+            bottom: 10%;
+            animation: roam-right-left 35s linear infinite;
+        }
+
+        @keyframes roam-left-right {
+            from {
+                left: -15%;
+            }
+
+            to {
+                left: 105%;
+            }
+        }
+
+        @keyframes roam-right-left {
+            from {
+                left: 105%;
+            }
+
+            to {
+                left: -15%;
+            }
+        }
+
+        /* --- Scanner Window --- */
+        .scanner {
+            opacity: 0;
+            pointer-events: none;
+            position: relative;
+            width: 90vw;
+            max-width: 450px;
+            margin: 1rem auto;
+            border: 2px solid #666;
+            box-shadow: 0 0 15px #aaa;
+            background: rgba(0, 0, 0, 0.5);
+            transition: opacity 1s ease-in-out;
+        }
+
+        .scanner.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* The Midnight Gothic Blue/Red Camera Filter */
+        #video-feed {
+            width: 100%;
+            height: 100%;
+            filter: sepia(0.4) saturate(2) hue-rotate(-30deg) contrast(1.3) brightness(0.8);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* --- Detection Animations --- */
+        .detecting {
+            animation: red-alert 0.3s 4;
+        }
+
+        @keyframes red-alert {
+            50% {
+                box-shadow: 0 0 40px #ff0000, 0 0 25px #ff0000 inset;
+                border-color: #ff0000;
+            }
+        }
+
+        /* --- Blood Splatter (CORRECTED) --- */
+        #blood-splatter {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url("{{ url_for('static', filename='blood.png') }}");
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        #blood-splatter.active {
+            animation: blood-flash 0.5s 1;
+        }
+
+        @keyframes blood-flash {
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        /* --- UI Elements --- */
+        #status {
+            margin: 1.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        button {
+            background: rgba(0, 0, 0, 0.4);
+            color: #EAEAEA;
+            border: 1px solid #888;
+            padding: 12px 25px;
+            font-size: 1.2rem;
+            font-family: 'Cinzel', serif;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #EAEAEA;
+            color: #000;
+        }
+
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        #result-panel {
+            display: none;
+            max-width: 600px;
+            margin: 1rem auto;
+            background: rgba(0, 0, 0, 0.85);
+            border: 1px solid #666;
+            padding: 1.5rem;
+            text-align: left;
+        }
+
+        .remedy {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(179, 0, 0, 0.1);
+            border-left: 3px solid #b30000;
+        }
+
+        .remedy h4 {
+            margin-top: 0;
+            font-family: 'MedievalSharp', cursive;
+            color: #b30000;
+        }
+
+        /* --- Flash Message Style --- */
+        #flash-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'MedievalSharp', cursive;
+            font-size: clamp(3rem, 12vw, 6rem);
+            color: #ff0000;
+            text-shadow: 0 0 15px #ff0000, 0 0 25px #fff;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #flash-message.active {
+            animation: flash 1.5s 1;
+        }
+
+        @keyframes flash {
+            0% {
+                opacity: 0;
+            }
+
+            25% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            75% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* --- NEW GHOST IMAGE STYLE --- */
+        #ghost-image {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 4px;
+            border: 1px solid #666;
+            margin: 0 auto 1.5rem auto;
+            display: block;
+        }
+
+        /* --- NEW Style for the ghost inside the scanner --- */
+        #scanner-bg-image {
+            position: absolute;
+            /* Positions it relative to the scanner box */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Makes sure it fills the box */
+            opacity: 0.3;
+            /* Makes it look faint and ghostly */
+            z-index: 1;
+            /* Puts it behind the video feed */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="welcome-overlay">
+        <div id="welcome-box">
+            <h2>The Veil is Thin</h2>
+            <p>Anomalous spectral readings have been detected. Do you wish to proceed with the investigation?</p>
+            <button id="enter-button">Enter Site</button>
+        </div>
+    </div>
+    <!-- All assets are now loaded locally from the 'static' folder -->
+    <video autoplay muted loop playsinline id="bg-video">
+        <source src="{{ url_for('static', filename='backgroundnew.mp4') }}" type="video/mp4">
+    </video>
+    <audio id="background-music" src="{{ url_for('static', filename='ambient_music.mp3') }}" loop></audio>
+    <audio id="warning-sound" src="{{ url_for('static', filename='warning_sound.mp3') }}"></audio>
+    <img id="ghost1" class="roaming-ghost" src="{{ url_for('static', filename='ghost1.gif') }}">
+    <img id="ghost2" class="roaming-ghost" src="{{ url_for('static', filename='ghost1.gif') }}">
+
+    <!-- The blood splatter div is now clean, with no inline style -->
+    <div id="blood-splatter"></div>
+
+    <!-- Main Content -->
+    <h1>Haunted Investigation</h1>
+    <div id="flash-message"></div>
+    <div class="scanner" id="scanner-window">
+        <img id="scanner-bg-image" src="{{ url_for('static', filename='scanner_ghost.png') }}">
+        <video id="video-feed" autoplay playsinline></video>
+    </div>
+    <div id="status">Awaiting Investigation</div>
+    <button id="scan-button">Initiate Spectral Scan</button>
+    <div id="result-panel">
+    <div id="ghost-info">
+    <h2 id="ghost-name"></h2>
+    <p><strong>Era:</strong> <span id="ghost-era"></span></p>
+    <p><strong>Backstory:</strong> <span id="ghost-backstory"></span></p>
+    <p><strong>Message:</strong> <span id="ghost-message"></span></p>
+    <p><strong>Remedy:</strong> <span id="ghost-remedy"></span></p>
+</div>
+
+
+        <h2>--- Spectral Entity Manifested ---</h2>
+        <p><strong>Name:</strong> <span id="ghost-name"></span></p>
+        <p><strong>Era:</strong> <span id="ghost-era"></span></p>
+        <p><strong>Backstory:</strong> <span id="ghost-backstory"></span></p>
+        <p><strong>Message:</strong> "<em><span id="ghost-message"></span></em>"</p>
+        <div class="remedy">
+            <h4>Appeasement Protocol</h4>
+            <p id="ghost-remedy"></p>
+        </div>
+    </div>
+
+    <script>
+        // --- Element References ---
+        const enterButton = document.getElementById('enter-button');
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+        const scanButton = document.getElementById('scan-button');
+        const scannerWindow = document.getElementById('scanner-window');
+        const videoFeed = document.getElementById('video-feed');
+        const statusText = document.getElementById('status');
+        const resultPanel = document.getElementById('result-panel');
+        const backgroundMusic = document.getElementById('background-music');
+        const warningSound = document.getElementById('warning-sound');
+        const bloodSplatter = document.getElementById('blood-splatter');
+
+        let isScanning = false;
+
+        // --- Core Functions ---
+
+        // This function runs when you click "Enter Site"
+        function enterInvestigation() {
+            backgroundMusic.volume = 0.3;
+            backgroundMusic.play().catch(e => console.error("Music play failed:", e));
+
+            welcomeOverlay.style.opacity = 0;
+            setTimeout(() => {
+                welcomeOverlay.style.display = 'none';
+            }, 1000);
+        }
+
+        // This function starts the user's camera
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                videoFeed.srcObject = stream;
+            } catch (err) {
+                console.error("Camera access denied:", err);
+                statusText.textContent = "Camera Access Denied. Cannot investigate.";
+                // Hide the scanner again if permission is denied
+                scannerWindow.classList.remove('active');
+            }
+        }
+
+        // This is the function to start the scan process
+        async function initiateScan() {
+            if (isScanning) return;
+            isScanning = true;
+
+            // --- FIX #1: SHOW THE SCANNER AND START THE CAMERA ---
+            // This line makes the scanner window visible.
+            scannerWindow.classList.add('active');
+            // This line waits for the camera to turn on before continuing.
+            await startCamera();
+            // ----------------------------------------------------
+
+            scanButton.disabled = true;
+            resultPanel.style.display = 'none';
+            statusText.textContent = "Scanning for Spectral Anomalies...";
+
+            const randomDelay = (Math.random() * 6 + 5) * 1000;
+            setTimeout(runDetectionSequence, randomDelay);
+        }
+
+        // This function runs the animations and sounds
+        function runDetectionSequence() {
+            const flashMessage = document.getElementById('flash-message');
+            flashMessage.textContent = "GHOST DETECTED";
+            flashMessage.classList.add('active');
+            warningSound.play().catch(e => console.error("Warning sound failed:", e));
+            scannerWindow.classList.add('detecting');
+            bloodSplatter.classList.add('active');
+
+            // This calls the function to get the AI results
+            fetchGhostData();
+
+            // This cleans up the animations after they finish
+            setTimeout(() => {
+                scannerWindow.classList.remove('detecting');
+                bloodSplatter.classList.remove('active');
+                flashMessage.classList.remove('active');
+            }, 1500);
+        }
+        async function fetchGhostData() {
+    try {
+        const response = await fetch("/detect-ghost", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Debug: See what backend sends
+        console.log("👻 Ghost Data Received:", data);
+
+        // Ensure we have all fields (fallback text if missing)
+        const name = data.name || "Unknown Spirit";
+        const era = data.era || "Unknown Era";
+        const backstory = data.backstory || "No backstory found.";
+        const message = data.message || "The spirit remains silent.";
+        const remedy = data.remedy || "No remedy known.";
+
+        // Display results on page
+        document.getElementById("ghostName").textContent = name;
+        document.getElementById("ghostEra").textContent = era;
+        document.getElementById("ghostBackstory").textContent = backstory;
+        document.getElementById("ghostMessage").textContent = message;
+        document.getElementById("ghostRemedy").textContent = remedy;
+
+    } catch (error) {
+        console.error("❌ Error fetching ghost data:", error);
+        document.getElementById("ghostName").textContent = "Phantom not found";
+        document.getElementById("ghostEra").textContent = "-";
+        document.getElementById("ghostBackstory").textContent = "The spirit refused to speak.";
+        document.getElementById("ghostMessage").textContent = "Silence fills the air.";
+        document.getElementById("ghostRemedy").textContent = "No remedy known.";
+    }
+}
+
+        // --- Event Listeners ---
+        enterButton.addEventListener('click', enterInvestigation);
+        scanButton.addEventListener('click', initiateScan);
+    </script>
+
+</body>
+
+</html>
